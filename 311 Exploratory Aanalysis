@@ -1,0 +1,302 @@
+
+"""
+==============================================================================
+============================== GROUP PROJECT =============================
+==============================================================================
+"""
+
+
+import pandas as pd
+from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Tahoma']
+plt.style.use('seaborn-colorblind')
+
+#Importing the CSV
+
+data_311 = pd.read_csv('311_201910.csv', parse_dates = True)
+#data_911 = pd.read_csv('311_201910.csv')
+
+
+data_311.columns
+
+
+#Reading the needed columns
+data_311 = data_311[['Created Date', 'Closed Date','Agency','Complaint Type',
+                     'Location Type','City','Status','Resolution Action Updated Date',
+                     'Borough']]
+#Renaming the columns 
+data_311.columns = ['cr_dt','cl_dt','agency','complaint_type',
+                  'location_type','city','status','resolution_date',
+                  'borough']
+data_311.head()
+# dropping null value columns to avoid errors 
+data_311.dropna(inplace = True) 
+
+
+
+print("\nTASK 1: Fixing Timestamp")
+print("===========================================")
+
+# storing dtype before converting 
+before = data_311.dtypes
+# converting dtypes using astype 
+data_311["cr_dt"]= data_311["cr_dt"].astype('datetime64') 
+data_311["cl_dt"]= data_311["cl_dt"].astype('datetime64') 
+data_311['resolution_date'] = data_311['resolution_date'].astype('datetime64')
+# checking datatype conversion
+print(data_311.dtypes)
+
+
+print("\nTASK 2: Finding Peak Day")
+print("===========================================")
+
+# subsetting the dataset
+df = data_311[['cr_dt','borough']]
+# setting cr_dt as the index 
+df = df.set_index('cr_dt')
+
+# aggregate the information by 'D' - Day; ('M' - Month; 'W' - Week)
+daily = df.resample('D').count()
+# finding the day with most complaints 
+daily_max = df.resample('D').count().max().iloc[0]
+
+#plot
+plt.plot(daily)
+plt.show()
+
+print("\nOctober 2019 the peak 311 complaint day is: ")
+print(daily[daily['borough']==daily_max])
+
+
+
+print("\nTASK 3: Finding Peak Hours")
+print("===========================================")
+
+hr = data_311[['cr_dt','borough','complaint_type']]
+hr.head()
+# Convert Created Hours into minutes - 00:00:00 is 0 and 01:00:00 is 60
+hr['cr_hr'] = hr['cr_dt'].apply(lambda x: int(format(x, "%H"))*60 + int(format(x, "%M")))
+
+# Define a function to return the period of time 
+def DayTime(x):
+    if x >= 0 and x <1*60 :
+        daytime = '(01) 12AM - 1AM'
+    elif x < 2*60:
+        daytime = '(02) 1AM - 2AM'
+    elif x < 3*60:
+        daytime = '(03) 2AM - 3AM'
+    elif x < 4*60:
+        daytime = '(04) 3AM - 4AM'
+    elif x < 5*60:
+        daytime = '(05) 4AM - 5AM'        
+    elif x < 6*60:
+        daytime = '(06) 5AM - 6AM'
+    elif x < 7*60:
+        daytime = '(07) 6AM - 7AM'
+    elif x < 8*60:
+        daytime = '(08) 7AM - 8AM'
+    elif x < 9*60:
+        daytime = '(09) 8AM - 9AM'
+    elif x < 10*60:
+        daytime = '(10) 9AM - 10AM'
+    elif x < 11*60:
+        daytime = '(11) 10AM - 11AM'
+    elif x < 12*60:
+        daytime = '(12) 11AM - 12PM'
+    elif x < 13*60:
+        daytime = '(13) 12PM - 1PM'
+    elif x < 14*60:
+        daytime = '(14) 1PM - 2PM'
+    elif x < 15*60:
+        daytime = '(15) 2PM - 3PM'        
+    elif x < 16*60:
+        daytime = '(16) 3PM - 4PM'
+    elif x < 17*60:
+        daytime = '(17) 4PM - 5PM'
+    elif x < 18*60:
+        daytime = '(18) 5PM - 6PM'
+    elif x < 19*60:
+        daytime = '(19) 6PM - 7PM'
+    elif x < 20*60:
+        daytime = '(20) 7PM - 8PM'
+    elif x < 21*60:
+        daytime = '(21) 8PM - 9PM'        
+    elif x < 22*60:
+        daytime = '(22) 9PM - 10PM'
+    elif x < 23*60:
+        daytime = '(23) 10PM - 11PM'  
+    elif x < 24*60:
+        daytime = '(24) 11PM - 12AM'
+
+    return daytime 
+
+# Apply the "DateTime" function to generate a new column identify the time period
+hr['day'] = hr['cr_hr'].apply(DayTime)
+# day_pattern df: count of complaints by period of time 
+day_pattern = hr['day'].value_counts()
+
+
+"""
+FIGURE 1: COMPLAINTS BY HOUR
+"""
+print("\nFIGURE 1: Number of Complaints by Hour")
+
+# Plot Complaint Frequency by Hour 
+fig1 = hr['day'].value_counts().sort_index(ascending=True).plot(kind='line', figsize=(8, 6))
+plt.xlabel("Number of 311 Complaints", labelpad=14)
+plt.ylabel("Complaint Issues", labelpad=14)
+plt.title("Complaints by Hour", y=1.02, color="midnightblue",fontsize = 18)
+plt.savefig('fig1.png')
+
+
+
+
+print("\nTASK 4: Major Complaint Issues ")
+print("===========================================")
+
+# Overview of complaint types 
+hr['complaint_type'].value_counts().sort_index().plot(kind='barh', figsize=(8, 6))
+hr['complaint_type'].value_counts()
+
+# Define ComplaintType to aggregate complaints 
+def ComplaintType(x):
+    if x in ('Noise - Residential'):
+        issue = "Noise - Residential"
+    elif x.find('Noise') != -1:
+        issue = "Noise - Others"
+    elif x in ("HEAT/HOT WATER", "WATER LEAK") or x.find('Water') != -1:
+        issue = "Heat/Water Related"
+    elif x in ('Illegal Parking','Blocked Driveway') :
+        issue = x
+    elif x.find('Vehicle') != -1:
+        issue = 'Vehicle Related'
+    elif x in ('UNSANITARY CONDITION','Missed Collection (All Materials)'):
+        issue = 'Sanitary Related' 
+    elif x.find('Condition') != -1:
+        issue = 'Conditions'
+    elif x in ('Rodent') or x.find('Animal') != -1:
+        issue = 'Animal Related'
+    elif x.find('Tree') != -1:
+        issue = 'Tree Related'
+    elif x in ('GENERAL'):
+        issue = x 
+    elif x in ('Drug Activity', 'Drinking', 
+               'Violation of Park Rules', 
+               'Urinating in Public',
+               'Disorderly Youth',
+               'Illegal Fireworks'):
+        issue = "Individual Behaviors"
+    elif x in ('PLUMBING', 
+               'ELECTRIC', 
+               'ELEVATOR',
+               'Broken Parking Meter', 
+               'DOOR/WINDOW',
+               'PAINT/PLASTER',
+               'APPLIANCE',
+               'FLOORING/STAIRS',
+               'Maintenance or Facility') or x.find('Street Sign') != -1 :
+        issue = 'Public Facilities'
+    else:
+        issue = 'Others'
+        
+    return issue 
+
+
+# Apply the "ComplaintType" function to generate a new "Issue" column representing the issue
+hr['issue'] = hr['complaint_type'].apply(ComplaintType)
+hr['issue'].value_counts()
+
+
+
+"""
+FIGURE 2: MOST COMMON COMPLAINTS
+"""
+print("\nFIGURE 2: Most Common Complaint Issues")
+
+
+# Plot major issues 
+plot_issues = hr['issue'].value_counts().plot(kind='barh', figsize=(8, 6),color="lightsteelblue")
+plt.xlabel("Number of 311 Complaints", labelpad=20)
+plt.ylabel("Complaint Issues", labelpad=20)
+plt.title("Most Common Complaint Issues", y=1.02, color = "midnightblue", fontsize = 18)
+
+plt.savefig('fig2.png')
+
+
+
+
+
+
+print("\nTASK 5: Major Complaint Issues During Peak Hours")
+print("===========================================")
+
+# Morning Peak Hour Causes 
+peakhr = hr[hr['day'] == '(10) 9AM - 10AM'] # or hr['day'] == '(02) 10PM - 11PM')]
+am = peakhr['issue'].value_counts()[0:3]
+amplot = am.plot(kind="barh", color="sandybrown")
+plt.xlabel("Number of Complaints")
+plt.ylabel("Complaint Issues")
+plt.title("Top 3 Complaints of Morning Peak Hour (9AM-10AM)", 
+          color="peru", fontsize=18)
+plt.savefig('fig3.png')
+
+
+# Evening Peak Hour Causes 
+peakhr2 = hr[hr['day'] == '(23) 10PM - 11PM']
+pm = peakhr2['issue'].value_counts()[0:3]
+pm.plot(kind="barh", color = "rosybrown")
+plt.xlabel("Number of Complaints")
+plt.ylabel("Complaint Issues")
+plt.title("Top 3 Complaints of Evening Peak Hour (10PM-11PM)", 
+          color="maroon", fontsize=18)
+plt.savefig('fig4.png')
+
+
+
+
+print("\nTASK 6: Water Complaint by Hour")
+print("===========================================")
+
+water = hr[hr['issue'] == 'Heat/Water Related']
+# Plot Water Complaint Time Distribution
+water['day'].value_counts().sort_index(ascending=True).plot(kind='line', 
+     figsize=(8, 6), color='c')
+plt.xlabel("Number of Complaints", labelpad=14)
+plt.ylabel("Time Period", labelpad=14)
+plt.title("Peak Hours of Heat/Water Complaints", 
+          y=1.02,color='c',fontsize=24)
+plt.savefig('fig5.png')
+
+
+print("\nTASK 7: Noise Complaint by Hour")
+print("===========================================")
+
+noise = hr[hr['issue'] == 'Noise - Residential']
+# Plot Noise Complaint Time Distribution
+noise['day'].value_counts().sort_index().plot(kind='line', 
+     figsize=(8, 6),color='seagreen')
+plt.xlabel("Number of 311 Complaints", labelpad=14)
+plt.ylabel("Time Period", labelpad=14)
+plt.title("Peak Hours of Noise Complaints", 
+          y=1.02, color='seagreen',fontsize=24)
+plt.savefig('fig6.png')
+
+
+print("\nTASK 7: Parking Complaint by Hour")
+print("===========================================")
+
+parking = hr[hr['issue'] == 'Illegal Parking']
+parking['day'].value_counts()
+# Plot Noise Complaint Time Distribution
+parking['day'].value_counts().sort_index().plot(kind='line', 
+       figsize=(8, 6),color='darkolivegreen')
+plt.xlabel("Number of 311 Complaints", labelpad=14)
+plt.ylabel("Time Period", labelpad=14)
+plt.title("Peak Hours of Parking Complaints", 
+          y=1.02,color='darkolivegreen',fontsize=24)
+plt.savefig('fig7.png')
+

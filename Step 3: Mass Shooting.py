@@ -352,7 +352,7 @@ for i in range(22):
         weekAfter2+=datecount[i]
 weekdata=[weekBefore,weekAfter1,weekAfter2]
 barchart.append(weekdata)
-
+#draw a barchart to show impact of all mass shooting incidents
 df = pd.DataFrame(barchart,index=['7/20/2012','12/14/2012','9/16/2013','6/12/2016',
 '10/1/2017','11/5/2017','2/14/2018','10/27/2018','5/31/2019','8/3/2019'],
 columns=pd.Index(['week1','week2','week3'],

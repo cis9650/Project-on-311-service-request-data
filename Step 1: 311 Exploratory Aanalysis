@@ -17,8 +17,8 @@ plt.style.use('seaborn-colorblind')
 
 #Importing the CSV
 
-data_311 = pd.read_csv('311_201910.csv', parse_dates = True)
-#data_911 = pd.read_csv('311_201910.csv')
+data_311 = pd.read_csv('311_2019full.csv', parse_dates = True)
+#data_911 = pd.read_csv('311_2019full.csv')
 
 
 data_311.columns
@@ -45,8 +45,6 @@ print("===========================================")
 before = data_311.dtypes
 # converting dtypes using astype 
 data_311["cr_dt"]= data_311["cr_dt"].astype('datetime64') 
-data_311["cl_dt"]= data_311["cl_dt"].astype('datetime64') 
-data_311['resolution_date'] = data_311['resolution_date'].astype('datetime64')
 # checking datatype conversion
 print(data_311.dtypes)
 

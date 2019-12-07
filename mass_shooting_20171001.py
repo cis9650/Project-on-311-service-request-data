@@ -46,3 +46,28 @@ week=[weekBefore,weekAfter1,weekAfter2]
 #find the trend of the number of 311 service requests by the week
 plt.plot(week)
 plt.show() 
+
+#after read all the mass shootings, we get 'barchart' which is a list of lists.
+barchart=[
+[34777,33757,33477],
+[35755,35379,33863],
+[32436,31700,32330],
+[47531,49483,48802],
+[50059,47931,46231],
+[54890,53380,52124],
+[49512,44822,48815],
+[58306,52228,50661],
+[54474,61622,57023],
+[41859,40166,40164]
+]
+
+import matplotlib.pyplot as plt
+import pandas as pd
+df = pd.DataFrame(barchart,index=['7/20/2012','12/14/2012','9/16/2013','6/12/2016',
+'10/1/2017','11/5/2017','2/14/2018','10/27/2018','5/31/2019','8/3/2019'],
+columns=pd.Index(['week1','week2','week3'],
+name='Mass Shootings'))
+print(df)
+df.plot.bar(alpha=0.7,rot=0,legend=False) 
+plt.xticks(rotation='vertical')
+plt.legend(['week1','week2','week3'])

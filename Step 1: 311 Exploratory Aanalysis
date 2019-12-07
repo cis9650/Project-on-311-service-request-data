@@ -298,3 +298,5 @@ plt.title("Peak Hours of Parking Complaints",
           y=1.02,color='darkolivegreen',fontsize=24)
 plt.savefig('fig7.png')
 
+
+
